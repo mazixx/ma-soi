@@ -1,0 +1,96 @@
+name: Build Ma Soi Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+    paths:
+      - "**.py"
+      - "**.kv"
+      - "buildozer.spec"
+      - ".github/workflows/build_apk.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+
+    steps:
+      - name: Lay ma nguon
+        uses: actions/checkout@v4
+
+      - name: Kiem tra file Android
+        run: |
+          if [ ! -f main.py ]; then
+            echo "::error::Chua co main.py giao dien Kivy. Khong the dong goi truc tiep file Tkinter."
+            exit 1
+          fi
+
+          if [ ! -f buildozer.spec ]; then
+            echo "::error::Thieu buildozer.spec"
+            exit 1
+          fi
+
+      - name: Cai Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Cai Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Cai cong cu bien dich Linux
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git zip unzip \
+            build-essential \
+            autoconf automake libtool \
+            pkg-config cmake \
+            zlib1g-dev libncurses5-dev libncursesw5-dev \
+            libffi-dev libssl-dev \
+            gettext
+
+      - name: Cai Buildozer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install \
+            "buildozer==1.5.0" \
+            "Cython==0.29.36" \
+            "setuptools<71" \
+            wheel
+
+      - name: Kiem tra cu phap Python
+        run: |
+          python -m py_compile main.py
+          if [ -f engine.py ]; then
+            python -m py_compile engine.py
+          fi
+
+      - name: Bien dich APK debug
+        run: |
+          set -o pipefail
+          buildozer -v android debug 2>&1 | tee build.log
+
+      - name: Luu APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MaSoi-Android-APK
+          path: bin/*.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Luu nhat ky build
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MaSoi-Build-Log
+          path: build.log
+          if-no-files-found: ignore
+          retention-days: 7
