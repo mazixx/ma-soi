@@ -1,0 +1,148 @@
+name: Deploy Ma Soi Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Lay ma nguon
+        uses: actions/checkout@v4
+
+      - name: Cai Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Kiem tra file
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for file in \
+            ma_soi_original.txt \
+            build_engine.py \
+            web_controller.py \
+            worker.js \
+            index.html
+          do
+            if [ ! -s "$file" ]; then
+              echo "::error::Thieu file hoac file rong: $file"
+              exit 1
+            fi
+          done
+
+      - name: Tao engine
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python build_engine.py
+          test -s engine.py
+          python -m py_compile engine.py web_controller.py
+
+      - name: Kiem tra engine co ban
+        run: |
+          python - <<'PY'
+          import json
+          import web_controller as web
+
+          def call(request):
+              return json.loads(
+                  web.api(json.dumps(request, ensure_ascii=False))
+              )
+
+          metadata = call({"op": "meta"})
+          assert "roles" in metadata["meta"]
+
+          result = call({
+              "op": "new",
+              "settings": {
+                  "mode": "Cơ bản",
+                  "size": "5",
+                  "moderator": True,
+                  "discussion": 10,
+                  "defense": 10,
+                  "vote": 5,
+                  "reveal": True,
+                  "name": "Bạn"
+              }
+          })
+
+          assert result["state"]["total"] == 5
+
+          for _ in range(3000):
+              result = call({"op": "tick", "dt": 0.25})
+
+              if result["state"]["done"]:
+                  break
+          else:
+              raise AssertionError(
+                  "Van co ban chua ket thuc trong gioi han kiem tra."
+              )
+
+          assert hasattr(web.ROOM.game, "_v11_review_report")
+
+          exported = call({
+              "op": "export",
+              "notes": "Smoke test"
+          })
+
+          assert exported["download"]["data"]["finished"]
+
+          print("Engine va bao cao cuoi van: OK")
+          PY
+
+      - name: Chuan bi website
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          rm -rf _site
+          mkdir -p _site
+
+          cp index.html worker.js _site/
+          cp engine.py web_controller.py _site/
+
+          touch _site/.nojekyll
+
+          test -s _site/engine.py
+          test -s _site/web_controller.py
+
+          echo "File duoc xuat ban:"
+          ls -lah _site
+
+      - name: Cau hinh Pages
+        uses: actions/configure-pages@v5
+
+      - name: Tai website len
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Xuat ban Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
