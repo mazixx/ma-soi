@@ -1,0 +1,852 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#111827">
+<title>Ma Sói • Làng Sương Mù</title>
+
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #111827;
+  --panel: #1b2940;
+  --text: #e6edf7;
+  --accent: #69ddd0;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px system-ui, sans-serif;
+}
+header, main { max-width: 1450px; margin: auto; padding: 16px; }
+h1 { color: var(--accent); margin: 0 0 6px; font-size: 25px; }
+h2 { font-size: 18px; }
+h3 { font-size: 15px; }
+.muted { color: #a9bbd3; }
+.panel {
+  padding: 15px;
+  background: var(--panel);
+  border: 1px solid #344860;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+  gap: 12px;
+}
+label { display: grid; gap: 5px; }
+input, select, textarea, button {
+  font: inherit;
+  border: 1px solid #526984;
+  border-radius: 7px;
+}
+input, select, textarea {
+  background: #132137;
+  color: var(--text);
+  padding: 9px;
+  min-width: 0;
+}
+button {
+  padding: 10px 14px;
+  min-height: 42px;
+  background: #2b405d;
+  color: var(--text);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+button:hover:not(:disabled) { background: #3a587c; }
+button:disabled { opacity: .45; cursor: default; }
+.primary { background: #23615a; }
+.toolbar, .buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.toolbar { margin-bottom: 12px; }
+#error {
+  color: #ffb5b5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+#roleGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+  gap: 8px;
+}
+.role-input {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px;
+  background: #132137;
+  border-radius: 7px;
+}
+.role-input input { width: 65px; }
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 14px;
+}
+#village {
+  background: linear-gradient(#090d24, #27324e);
+  padding: 14px;
+  border-radius: 12px;
+  transition: background 1s;
+}
+#village.day {
+  background: linear-gradient(#76b5dc, #e9cba1);
+}
+#people {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
+  gap: 8px;
+}
+.person {
+  background: #1c3049;
+  border: 1px solid #778aa2;
+  border-radius: 9px;
+  padding: 11px 7px;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.person.self { border: 2px solid var(--accent); }
+.person.dead { background: #333943; color: #a9bbd3; }
+.person .role { color: var(--accent); font-size: 13px; margin: 5px 0; }
+.person .life { font-size: 12px; }
+#banner {
+  text-align: center;
+  color: #fff4ce;
+  font-weight: bold;
+  min-height: 28px;
+  margin: 8px 0;
+}
+#private, #status { white-space: pre-wrap; }
+#private { color: var(--accent); line-height: 1.6; }
+#choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 7px;
+  margin: 12px 0;
+}
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px;
+  background: #132137;
+  border-radius: 7px;
+}
+.choice input { width: 19px; height: 19px; }
+.tabs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+.tabs button { padding: 7px 10px; }
+.tabs button.active { border-color: var(--accent); background: #36577b; }
+.tab { display: none; }
+.tab.active { display: block; }
+pre {
+  font: 14px/1.6 system-ui, sans-serif;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: #132137;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 0;
+  height: 510px;
+  overflow: auto;
+}
+#notes { width: 100%; height: 510px; resize: vertical; }
+.chat-row { display: flex; gap: 7px; margin-top: 10px; }
+#chatInput { flex: 1; min-width: 0; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { padding: 8px; border-bottom: 1px solid #42526b; text-align: left; }
+.table-wrap { overflow: auto; max-height: 510px; }
+[hidden] { display: none !important; }
+@media (max-width: 900px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  pre, #notes { height: 380px; }
+}
+</style>
+</head>
+
+<body>
+<header>
+  <h1>🐺 MA SÓI • LÀNG SƯƠNG MÙ</h1>
+  <div class="muted">Quản trò hoặc nhập vai • Bot có trí nhớ • Không dùng API AI</div>
+  <p id="loading" role="status">Đang tải Python cho trình duyệt…</p>
+  <div id="error" role="alert"></div>
+</header>
+
+<main>
+<section id="setup" class="panel">
+  <h2>Cấu hình ván</h2>
+
+  <div class="grid">
+    <label>Bộ luật
+      <select id="mode">
+        <option>Cơ bản</option>
+        <option>Nâng cao</option>
+      </select>
+    </label>
+
+    <label>Số người
+      <select id="size">
+        <option>5</option>
+        <option selected>10</option>
+        <option>15</option>
+        <option>20</option>
+        <option value="custom">Tùy chỉnh</option>
+      </select>
+    </label>
+
+    <label>Cách chơi
+      <select id="play">
+        <option value="gm">Quản trò</option>
+        <option value="human">Nhập vai</option>
+      </select>
+    </label>
+
+    <label>Tên của bạn
+      <input id="name" value="Bạn" maxlength="18">
+    </label>
+
+    <label>Công khai vai khi chết
+      <select id="reveal">
+        <option value="yes">Có</option>
+        <option value="no">Không</option>
+      </select>
+    </label>
+
+    <label>Thảo luận: 10–600 giây
+      <input id="discussion" type="number" min="10" max="600" value="60">
+    </label>
+
+    <label>Biện hộ: 10–600 giây
+      <input id="defense" type="number" min="10" max="600" value="30">
+    </label>
+
+    <label>Bỏ phiếu: 5–300 giây
+      <input id="vote" type="number" min="5" max="300" value="30">
+    </label>
+  </div>
+
+  <h3>Đội hình — chọn “Tùy chỉnh” để sửa</h3>
+  <div id="roleGrid"></div>
+  <p id="total" class="muted"></p>
+
+  <p class="muted">
+    Nhập vai: bạn được tính trong tổng số người và nhận vai ngẫu nhiên.
+    Mỗi vai đặc biệt tối đa một bản sao.
+  </p>
+
+  <button id="start" class="primary" disabled>▶ Bắt đầu ván</button>
+</section>
+
+<section id="room" hidden>
+  <div class="toolbar">
+    <strong id="status"></strong>
+    <button id="pause">Tạm dừng</button>
+    <button id="export">Xuất nhật ký</button>
+    <button id="leave">Rời phòng</button>
+  </div>
+
+  <div class="layout">
+    <div>
+      <section id="village">
+        <h2 id="skyTitle">ĐÊM XUỐNG TRÊN LÀNG</h2>
+        <div id="banner"></div>
+        <div id="people"></div>
+      </section>
+
+      <section class="panel" style="margin-top:12px">
+        <div id="private"></div>
+      </section>
+
+      <section class="panel">
+        <h3>Hành động của bạn</h3>
+        <div id="actionTitle">Đang theo dõi diễn biến…</div>
+        <div id="choices"></div>
+
+        <div class="buttons">
+          <button id="confirm" disabled>Xác nhận</button>
+          <button id="skip" disabled>Bỏ qua / Phiếu trắng</button>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel">
+      <nav class="tabs">
+        <button data-tab="chat" class="active">Chat</button>
+        <button data-tab="history">Lịch sử</button>
+        <button data-tab="notes">Ghi chú</button>
+        <button data-tab="roster">Nhân vật</button>
+        <button data-tab="summary">Tóm tắt</button>
+        <button data-tab="detail">Chi tiết</button>
+        <button data-tab="review">Đánh giá</button>
+      </nav>
+
+      <div id="tab-chat" class="tab active"><pre id="chat"></pre></div>
+      <div id="tab-history" class="tab"><pre id="history"></pre></div>
+      <div id="tab-notes" class="tab">
+        <textarea id="notes" placeholder="Ghi chú của bạn…"></textarea>
+      </div>
+      <div id="tab-roster" class="tab">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>#</th><th>Tên</th><th>Vai</th><th>Trạng thái</th><th>Thông tin</th></tr>
+            </thead>
+            <tbody id="roster"></tbody>
+          </table>
+        </div>
+      </div>
+      <div id="tab-summary" class="tab"><pre id="summary"></pre></div>
+      <div id="tab-detail" class="tab"><pre id="detail"></pre></div>
+      <div id="tab-review" class="tab"><pre id="review"></pre></div>
+
+      <form id="chatForm" class="chat-row">
+        <input id="chatInput" placeholder="Ví dụ: Mình nghi #3">
+        <button id="send" type="submit">Gửi</button>
+      </form>
+
+      <p class="muted">
+        Người sống chat ban ngày; khi hòa phiếu chỉ ứng viên được biện hộ.
+        Chat hồn ma không ảnh hưởng suy luận của bot.
+      </p>
+    </section>
+  </div>
+</section>
+
+<section class="panel muted">
+  <strong>Lưu ý:</strong>
+  Tải lại hoặc đóng trang sẽ mất ván hiện tại.
+  Xuất nhật ký trước khi rời phòng nếu cần giữ lịch sử.
+  Website hiện là chơi với bot, không phải nhiều người chơi qua mạng.
+</section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const worker = new Worker(
+  new URL("./worker.js", document.baseURI)
+);
+
+const pending = new Map();
+let serial = 0;
+let ready = false;
+let busy = false;
+let meta = null;
+let state = null;
+let actionKey = "";
+let roomKey = null;
+let autoStopped = false;
+let pauseOnIdle = false;
+let historyLines = [];
+let chatLines = [];
+let summaries = [];
+
+function node(tag, className, text) {
+  const item = document.createElement(tag);
+  if (className) item.className = className;
+  if (text !== undefined) item.textContent = text;
+  return item;
+}
+
+function rpc(request) {
+  return new Promise((resolve, reject) => {
+    const id = ++serial;
+    pending.set(id, {resolve, reject});
+    worker.postMessage({id, request});
+  });
+}
+
+function rejectPending(message) {
+  for (const task of pending.values()) {
+    task.reject(new Error(message));
+  }
+  pending.clear();
+}
+
+worker.onmessage = event => {
+  const message = event.data;
+
+  if (message.type === "ready") {
+    ready = true;
+    command({op: "meta"});
+    return;
+  }
+
+  if (message.type === "fatal") {
+    ready = false;
+    $("loading").textContent = "Không khởi động được Python.";
+    $("error").textContent = message.error;
+    rejectPending(message.error);
+    controls();
+    return;
+  }
+
+  const task = pending.get(message.id);
+  if (!task) return;
+
+  pending.delete(message.id);
+
+  if (message.ok) task.resolve(message.result);
+  else task.reject(new Error(message.error));
+};
+
+worker.onerror = event => {
+  ready = false;
+  const message = event.message || "Worker gặp lỗi.";
+  $("error").textContent = message;
+  $("loading").textContent = "Worker đã dừng.";
+  rejectPending(message);
+  controls();
+};
+
+function resetRoom() {
+  historyLines = [];
+  chatLines = [];
+  summaries = [];
+  actionKey = "";
+  autoStopped = false;
+
+  for (const id of ["chat", "history", "summary", "detail", "review"]) {
+    $(id).textContent = "";
+  }
+
+  $("notes").value = "";
+  $("chatInput").value = "";
+  showTab("chat");
+}
+
+function setLog(id, lines) {
+  const box = $(id);
+  box.textContent = lines.join("\n");
+  box.scrollTop = box.scrollHeight;
+}
+
+function consumeEvents(events) {
+  let changed = false;
+
+  for (const event of events || []) {
+    if (event.type === "message") {
+      historyLines.push(event.text);
+
+      if (event.chat) chatLines.push(event.text);
+      changed = true;
+
+    } else if (event.type === "summary") {
+      summaries.unshift(event.text);
+      summaries = summaries.slice(0, 20);
+      $("summary").textContent = summaries.join("\n\n════════════\n\n");
+
+    } else if (event.type === "reports") {
+      $("detail").textContent = event.detail;
+      $("review").textContent = event.review;
+      showTab("review");
+    }
+  }
+
+  // Giới hạn phần hiển thị; nhật ký trong engine vẫn giữ đầy đủ.
+  historyLines = historyLines.slice(-1500);
+  chatLines = chatLines.slice(-800);
+
+  if (changed) {
+    setLog("history", historyLines);
+    setLog("chat", chatLines);
+  }
+}
+
+function saveDownload(download) {
+  const blob = new Blob(
+    [JSON.stringify(download.data, null, 2)],
+    {type: "application/json;charset=utf-8"}
+  );
+
+  const url = URL.createObjectURL(blob);
+  const link = node("a");
+
+  link.href = url;
+  link.download = download.filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function command(request) {
+  if (!ready || busy) return;
+
+  busy = true;
+  controls();
+
+  if (request.op !== "tick") $("error").textContent = "";
+
+  try {
+    const result = await rpc(request);
+
+    if (result.meta) {
+      meta = result.meta;
+      buildSetup();
+    }
+
+    if (result.state) {
+      if (roomKey !== result.state.room) {
+        roomKey = result.state.room;
+        resetRoom();
+      }
+
+      state = result.state;
+      consumeEvents(result.events);
+      render();
+    }
+
+    if (result.download) saveDownload(result.download);
+
+    if (request.op === "chat") {
+      $("chatInput").value = "";
+    }
+
+    if (request.op === "pause" && request.value === false) {
+      autoStopped = false;
+    }
+
+  } catch (error) {
+    $("error").textContent = String(error.message || error);
+
+    if (request.op === "tick") {
+      autoStopped = true;
+      $("error").textContent +=
+        "\nVán đã dừng tự động. Hãy xuất nhật ký để kiểm tra.";
+    }
+
+  } finally {
+    busy = false;
+    controls();
+
+    if (
+      state && !state.done && !state.paused
+      && (pauseOnIdle || document.hidden)
+    ) {
+      pauseOnIdle = false;
+      command({op: "pause", value: true});
+    }
+  }
+}
+
+function buildSetup() {
+  $("roleGrid").replaceChildren();
+
+  for (const [code, name] of Object.entries(meta.roles)) {
+    const label = node("label", "role-input");
+    label.title = meta.descriptions[code];
+
+    label.appendChild(node("span", "", name));
+
+    const input = node("input");
+    input.type = "number";
+    input.min = "0";
+    input.max = ["V", "W"].includes(code) ? "30" : "1";
+    input.value = "0";
+    input.dataset.role = code;
+    input.oninput = updateTotal;
+
+    label.appendChild(input);
+    $("roleGrid").appendChild(label);
+  }
+
+  updateSetup();
+}
+
+function roleInputs() {
+  return [...document.querySelectorAll("[data-role]")];
+}
+
+function updateSetup() {
+  if (!meta) return;
+
+  const mode = $("mode").value;
+  const size = $("size").value;
+  const custom = size === "custom";
+
+  const preset = custom
+    ? null
+    : meta.presets[mode][size];
+
+  for (const input of roleInputs()) {
+    const code = input.dataset.role;
+    const allowed = mode === "Nâng cao" || meta.basic.includes(code);
+
+    if (preset) input.value = preset[code] || 0;
+    if (!allowed) input.value = 0;
+
+    input.disabled = !custom || !allowed;
+  }
+
+  updateTotal();
+}
+
+function updateTotal() {
+  const counts = Object.fromEntries(
+    roleInputs().map(input => [
+      input.dataset.role, Number(input.value)
+    ])
+  );
+
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  const wolves = (counts.W || 0) + (counts.D || 0);
+
+  $("total").textContent =
+    `Tổng: ${total} người • Sói ban đầu: ${wolves}`;
+}
+
+function showTab(name) {
+  for (const button of document.querySelectorAll("[data-tab]")) {
+    button.classList.toggle("active", button.dataset.tab === name);
+  }
+
+  for (const tab of document.querySelectorAll(".tab")) {
+    tab.classList.toggle("active", tab.id === "tab-" + name);
+  }
+}
+
+function renderAction() {
+  const action = state.action;
+  const key = action ? `${state.room}:${action.id}` : "";
+
+  if (key !== actionKey) {
+    actionKey = key;
+    $("choices").replaceChildren();
+
+    if (action) {
+      action.options.forEach(([value, text], index) => {
+        const label = node("label", "choice");
+        const input = node("input");
+
+        input.type = action.maximum > 1 ? "checkbox" : "radio";
+        input.name = "action-choice";
+        input.className = "action-choice";
+        input.value = String(index);
+
+        label.appendChild(input);
+        label.appendChild(node("span", "", text));
+        $("choices").appendChild(label);
+      });
+    }
+  }
+
+  $("actionTitle").textContent = action
+    ? action.title
+      + (action.submitted ? " • Đã gửi" : "")
+      + (action.maximum > 1 ? " • Có thể chọn nhiều mục" : "")
+    : "Đang theo dõi diễn biến…";
+}
+
+function render() {
+  if (!state) return;
+
+  $("setup").hidden = true;
+  $("room").hidden = false;
+
+  $("status").textContent =
+    `Ngày ${state.day} • ${state.phase}`
+    + (state.remaining !== null ? ` • ${state.remaining}s` : "")
+    + ` • Còn ${state.alive}/${state.total}`
+    + (state.paused ? " • TẠM DỪNG" : "");
+
+  $("private").textContent = state.private;
+  $("banner").textContent = state.banner;
+
+  $("village").classList.toggle("day", state.light > 0.5);
+  $("skyTitle").textContent = state.light > 0.5
+    ? "☀ LÀNG THỨC GIẤC"
+    : "☾ ĐÊM XUỐNG TRÊN LÀNG";
+
+  $("people").replaceChildren();
+  $("roster").replaceChildren();
+
+  for (const player of state.players) {
+    const card = node(
+      "div",
+      "person"
+      + (player.self ? " self" : "")
+      + (!player.alive ? " dead" : "")
+    );
+
+    card.appendChild(node("strong", "", `#${player.id} ${player.name}`));
+    card.appendChild(node("div", "role", player.role));
+    card.appendChild(node(
+      "div", "life", player.alive ? "● Còn sống" : "✕ Đã chết"
+    ));
+
+    $("people").appendChild(card);
+
+    const tr = node("tr");
+
+    for (const value of [
+      player.id,
+      player.name,
+      player.role,
+      player.alive ? "Sống" : "Đã chết",
+      player.information
+    ]) {
+      tr.appendChild(node("td", "", String(value)));
+    }
+
+    $("roster").appendChild(tr);
+  }
+
+  renderAction();
+  controls();
+}
+
+function controls() {
+  $("start").disabled = !ready || !meta || busy;
+  $("pause").disabled = !state || busy || state.done;
+  $("pause").textContent = state && state.paused ? "Tiếp tục" : "Tạm dừng";
+
+  $("export").disabled = !state || busy;
+  $("leave").disabled = busy;
+
+  const action = state && state.action;
+
+  const enabled = Boolean(
+    action && !action.submitted
+    && !state.paused && !state.done && !busy && !autoStopped
+  );
+
+  $("confirm").disabled = !enabled;
+  $("skip").disabled = !enabled || !action.optional;
+
+  for (const input of document.querySelectorAll(".action-choice")) {
+    input.disabled = !enabled;
+  }
+
+  $("send").disabled = (
+    !state || busy || state.paused || state.done || state.moderator
+  );
+
+  if (ready) {
+    $("loading").textContent = busy
+      ? "Đang xử lý…"
+      : "Python đã sẵn sàng • Game chạy trên trình duyệt của bạn";
+  }
+}
+
+$("mode").onchange = updateSetup;
+$("size").onchange = updateSetup;
+
+$("start").onclick = () => {
+  command({
+    op: "new",
+    settings: {
+      mode: $("mode").value,
+      size: $("size").value,
+      moderator: $("play").value === "gm",
+      name: $("name").value,
+      reveal: $("reveal").value === "yes",
+      discussion: Number($("discussion").value),
+      defense: Number($("defense").value),
+      vote: Number($("vote").value),
+      counts: Object.fromEntries(
+        roleInputs().map(input => [
+          input.dataset.role, Number(input.value)
+        ])
+      )
+    }
+  });
+};
+
+$("confirm").onclick = () => {
+  const action = state.action;
+  if (!action) return;
+
+  const selected = [
+    ...document.querySelectorAll(".action-choice:checked")
+  ].map(input => action.options[Number(input.value)][0]);
+
+  command({
+    op: "action",
+    token: action.id,
+    selected
+  });
+};
+
+$("skip").onclick = () => {
+  if (!state.action) return;
+
+  command({
+    op: "action",
+    token: state.action.id,
+    selected: []
+  });
+};
+
+$("pause").onclick = () => {
+  command({op: "pause", value: !state.paused});
+};
+
+$("export").onclick = () => {
+  command({op: "export", notes: $("notes").value});
+};
+
+$("leave").onclick = () => {
+  if (busy) return;
+
+  if (!window.confirm("Rời phòng? Nhật ký chưa xuất sẽ không được lưu.")) {
+    return;
+  }
+
+  async function leave() {
+    await command({op: "pause", value: true});
+    state = null;
+    roomKey = null;
+    autoStopped = false;
+    $("room").hidden = true;
+    $("setup").hidden = false;
+    controls();
+  }
+
+  leave();
+};
+
+$("chatForm").onsubmit = event => {
+  event.preventDefault();
+
+  const text = $("chatInput").value.trim();
+  if (text) command({op: "chat", text});
+};
+
+for (const button of document.querySelectorAll("[data-tab]")) {
+  button.onclick = () => showTab(button.dataset.tab);
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden && state && !state.done && !state.paused) {
+    if (busy) pauseOnIdle = true;
+    else command({op: "pause", value: true});
+  }
+});
+
+let lastTick = performance.now();
+
+setInterval(() => {
+  const now = performance.now();
+  const dt = Math.max(0, Math.min((now - lastTick) / 1000, 0.25));
+  lastTick = now;
+
+  if (
+    !ready || busy || !state || state.done || state.paused
+    || autoStopped || document.hidden
+  ) return;
+
+  command({op: "tick", dt});
+}, 100);
+</script>
+</body>
+</html>
